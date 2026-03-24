@@ -1,0 +1,165 @@
+<div class="page-header">
+  <h1 class="page-title">{{ isEdit() ? 'Edit Task' : 'New Task' }}</h1>
+</div>
+
+@if (loading()) {
+  <div class="card form-card" style="text-align: center; padding: 3rem;">Loading...</div>
+}
+
+@if (!loading()) {
+<div class="card form-card">
+  <form (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label class="form-label" for="title">Task Title *</label>
+      <input
+        class="form-input"
+        id="title"
+        type="text"
+        [(ngModel)]="form.title"
+        name="title"
+        placeholder="e.g. Add vocabulary feature to GRE App"
+        required
+        autofocus
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="description">Description</label>
+      <textarea
+        class="form-textarea"
+        id="description"
+        [(ngModel)]="form.description"
+        name="description"
+        placeholder="Describe the task in detail..."
+      ></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="project">Project</label>
+        <select class="form-select" id="project" [(ngModel)]="form.project" name="project" (ngModelChange)="onProjectChange()">
+          <option value="">Miscellaneous</option>
+          @for (p of projects(); track p._id) {
+            <option [value]="p._id">{{ p.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="assignedTo">Assigned To</label>
+        <select class="form-select" id="assignedTo" [(ngModel)]="form.assignedTo" name="assignedTo">
+          <option value="">Unassigned</option>
+          @for (u of users(); track u._id) {
+            <option [value]="u._id">{{ u.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row three-cols">
+      <div class="form-group">
+        <label class="form-label" for="status">Status</label>
+        <select class="form-select" id="status" [(ngModel)]="form.status" name="status">
+          @for (s of statusOptions; track s) {
+            <option [value]="s">{{ s }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="priority">Priority</label>
+        <select class="form-select" id="priority" [(ngModel)]="form.priority" name="priority">
+          @for (p of priorityOptions; track p) {
+            <option [value]="p">{{ p }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="category">Category</label>
+        <select class="form-select" id="category" [(ngModel)]="form.category" name="category">
+          <option value="">Select category</option>
+          @for (c of categoryOptions; track c) {
+            <option [value]="c">{{ c }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (roadmapItems().length > 0) {
+      <div class="form-group">
+        <label class="form-label" for="roadmapItem">Roadmap Initiative</label>
+        <select class="form-select" id="roadmapItem" [(ngModel)]="form.roadmapItem" name="roadmapItem">
+          <option value="">None</option>
+          @for (r of roadmapItems(); track r._id) {
+            <option [value]="r._id">{{ r.title }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    <div class="form-row three-cols">
+      <div class="form-group">
+        <label class="form-label" for="sprint">Sprint</label>
+        <select class="form-select" id="sprint" [(ngModel)]="form.sprint" name="sprint">
+          <option value="">No sprint</option>
+          @for (s of sprints(); track s._id) {
+            <option [value]="s._id">{{ s.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="startDate">Start Date</label>
+        <input
+          class="form-input"
+          id="startDate"
+          type="date"
+          [(ngModel)]="form.startDate"
+          name="startDate"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="deadline">Deadline</label>
+        <input
+          class="form-input"
+          id="deadline"
+          type="date"
+          [(ngModel)]="form.deadline"
+          name="deadline"
+        />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <div class="tags-input-wrapper">
+        @for (tag of tags; track tag) {
+          <span class="tag-chip">
+            {{ tag }}
+            <button type="button" class="tag-remove" (click)="removeTag(tag)">&times;</button>
+          </span>
+        }
+        <input
+          class="tag-input"
+          type="text"
+          [(ngModel)]="tagInput"
+          name="tagInput"
+          placeholder="Type and press Enter..."
+          (keydown)="onTagKeydown($event)"
+          (blur)="addTag()"
+        />
+      </div>
+      <span class="form-hint">Press Enter or comma to add a tag</span>
+    </div>
+
+    <div class="form-actions">
+      <a routerLink="/tasks" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving...' : (isEdit() ? 'Update Task' : 'Create Task') }}
+      </button>
+    </div>
+  </form>
+</div>
+}

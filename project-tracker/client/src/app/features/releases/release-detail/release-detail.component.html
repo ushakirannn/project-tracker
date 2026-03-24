@@ -1,0 +1,109 @@
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (release(); as r) {
+  <div class="page-header">
+    <div class="page-header-left">
+      <a routerLink="/releases" class="back-link">Releases</a>
+      <span class="separator">/</span>
+      <h1 class="page-title">{{ r.project?.name }} {{ r.version }}</h1>
+    </div>
+    <div class="page-header-actions">
+      <a [routerLink]="['/releases', r._id, 'edit']" class="btn btn-secondary">Edit</a>
+      <button class="btn btn-danger" (click)="confirmDelete()">Delete</button>
+    </div>
+  </div>
+
+  <div class="release-layout">
+    <div class="card">
+      <div class="release-meta">
+        <div class="meta-row">
+          <span class="meta-label">Project</span>
+          <a [routerLink]="['/projects', r.project?._id]" class="meta-value link">{{ r.project?.name }}</a>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Version</span>
+          <span class="meta-value version">{{ r.version }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Release Date</span>
+          <span class="meta-value">{{ r.releaseDate | date:'mediumDate' }}</span>
+        </div>
+        @if (r.sprint) {
+          <div class="meta-row">
+            <span class="meta-label">Sprint</span>
+            <a [routerLink]="['/sprints', r.sprint._id]" class="meta-value link">{{ r.sprint.name }}</a>
+          </div>
+        }
+        <div class="meta-row">
+          <span class="meta-label">Released By</span>
+          <span class="meta-value">{{ r.createdBy?.name || '-' }}</span>
+        </div>
+      </div>
+    </div>
+
+    @if (r.description) {
+      <div class="card">
+        <h3 class="card-title">Description</h3>
+        <p class="description">{{ r.description }}</p>
+      </div>
+    }
+
+    @if (r.changes && r.changes.length > 0) {
+      <div class="card">
+        <h3 class="card-title">Changelog</h3>
+        <ul class="changelog">
+          @for (change of r.changes; track $index) {
+            <li class="changelog-item">{{ change }}</li>
+          }
+        </ul>
+      </div>
+    }
+    @if (snapshots().length > 0) {
+      <div class="card">
+        <h3 class="card-title">Metric Impact</h3>
+        <div class="snapshots-table-wrapper">
+          <table class="snapshots-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Previous</th>
+                <th>Current</th>
+                <th>Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of snapshots(); track s._id) {
+                <tr>
+                  <td class="snapshot-metric-name">{{ $any(s.metric).metricName || 'Unknown' }}</td>
+                  <td class="snapshot-value">{{ s.previousValue }}</td>
+                  <td class="snapshot-value">{{ s.currentValue }}</td>
+                  <td>
+                    <span class="change-indicator"
+                      [class.positive]="s.percentageChange > 0"
+                      [class.negative]="s.percentageChange < 0"
+                      [class.neutral]="s.percentageChange === 0">
+                      {{ s.percentageChange > 0 ? '+' : '' }}{{ s.percentageChange }}%
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (showDeleteConfirm()) {
+    <div class="modal-overlay" (click)="cancelDelete()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Delete Release</h3>
+        <p>Are you sure you want to delete <strong>{{ r.project?.name }} {{ r.version }}</strong>?</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="cancelDelete()">Cancel</button>
+          <button class="btn btn-danger" (click)="deleteRelease()">Delete</button>
+        </div>
+      </div>
+    </div>
+  }
+}

@@ -1,0 +1,51 @@
+<div class="page-header">
+  <h1 class="page-title">Projects</h1>
+  <a routerLink="/projects/new" class="btn btn-primary">+ New Project</a>
+</div>
+
+<div class="filters">
+  @for (status of statusOptions; track status) {
+    <button
+      class="filter-btn"
+      [class.active]="activeFilter() === status"
+      (click)="filterByStatus(status)"
+    >
+      {{ status || 'All' }}
+    </button>
+  }
+</div>
+
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (projects().length === 0) {
+  <app-empty-state
+    title="No projects yet"
+    message="Create your first project to get started."
+  />
+} @else {
+  <div class="project-grid">
+    @for (project of projects(); track project._id) {
+      <a [routerLink]="['/projects', project._id]" class="project-card card">
+        <div class="project-card-header">
+          <h3 class="project-name">{{ project.name }}</h3>
+          <app-status-badge [status]="project.status" />
+        </div>
+        @if (project.description) {
+          <p class="project-description">{{ project.description }}</p>
+        }
+        <div class="project-meta">
+          @if (project.owner?.name) {
+            <span class="meta-item">
+              <span class="meta-label">Owner:</span> {{ project.owner.name }}
+            </span>
+          }
+          @if (project.startDate) {
+            <span class="meta-item">
+              <span class="meta-label">Started:</span> {{ project.startDate | date:'mediumDate' }}
+            </span>
+          }
+        </div>
+      </a>
+    }
+  </div>
+}

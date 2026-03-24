@@ -1,0 +1,36 @@
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <span class="brand-icon">GP</span>
+    <span class="brand-text">Galvanize Projects</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    @for (item of navItems; track item.route) {
+      <a
+        class="nav-item"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+      >
+        <span class="nav-icon">{{ item.icon }}</span>
+        <span class="nav-label">{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+
+  <div class="sidebar-footer">
+    @if (authService.user(); as user) {
+      <div class="user-info">
+        @if (user.avatar) {
+          <img [src]="user.avatar" [alt]="user.name" class="user-avatar" referrerpolicy="no-referrer" />
+        } @else {
+          <div class="user-avatar-placeholder">{{ user.name.charAt(0) }}</div>
+        }
+        <div class="user-details">
+          <span class="user-name">{{ user.name }}</span>
+          <span class="user-role">{{ user.role }}</span>
+        </div>
+      </div>
+      <button class="btn-logout" (click)="authService.logout()">Logout</button>
+    }
+  </div>
+</aside>

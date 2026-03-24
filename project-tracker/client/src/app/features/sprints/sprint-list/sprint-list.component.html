@@ -1,0 +1,40 @@
+<div class="page-header">
+  <h1 class="page-title">Sprints</h1>
+  <a routerLink="/sprints/new" class="btn btn-primary">+ New Sprint</a>
+</div>
+
+<div class="filters">
+  @for (status of statusOptions; track status) {
+    <button
+      class="filter-btn"
+      [class.active]="activeFilter() === status"
+      (click)="filterByStatus(status)"
+    >
+      {{ status || 'All' }}
+    </button>
+  }
+</div>
+
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (sprints().length === 0) {
+  <app-empty-state
+    title="No sprints yet"
+    message="Create your first sprint to start tracking work."
+  />
+} @else {
+  <div class="sprint-grid">
+    @for (sprint of sprints(); track sprint._id) {
+      <a [routerLink]="['/sprints', sprint._id]" class="sprint-card card">
+        <div class="sprint-card-header">
+          <h3 class="sprint-name">{{ sprint.name }}</h3>
+          <app-status-badge [status]="sprint.status" />
+        </div>
+        <div class="sprint-dates">
+          <span>{{ sprint.startDate | date:'MMM d' }} - {{ sprint.endDate | date:'MMM d, y' }}</span>
+          <span class="sprint-duration">{{ getDuration(sprint) }} days</span>
+        </div>
+      </a>
+    }
+  </div>
+}

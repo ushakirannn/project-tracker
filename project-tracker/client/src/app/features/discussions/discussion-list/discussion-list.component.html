@@ -1,0 +1,37 @@
+<div class="page-header">
+  <h1 class="page-title">Discussions</h1>
+  <div class="page-actions">
+    <select class="form-select project-filter" [(ngModel)]="projectFilter" (ngModelChange)="onProjectFilterChange()">
+      <option value="">All Projects</option>
+      @for (p of projects(); track p._id) {
+        <option [value]="p._id">{{ p.name }}</option>
+      }
+    </select>
+    <a routerLink="/discussions/new" class="btn btn-primary">+ New Discussion</a>
+  </div>
+</div>
+
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (discussions().length === 0) {
+  <app-empty-state title="No discussions yet" message="Start a discussion to track decisions and ideas." />
+} @else {
+  <div class="discussion-list">
+    @for (d of discussions(); track d._id) {
+      <a [routerLink]="['/discussions', d._id]" class="discussion-card card">
+        <div class="discussion-header">
+          <h3 class="discussion-title">{{ d.title }}</h3>
+          <span class="discussion-project">{{ d.project?.name }}</span>
+        </div>
+        <p class="discussion-content">{{ d.content }}</p>
+        <div class="discussion-footer">
+          <span class="discussion-author">{{ d.createdBy?.name }}</span>
+          <span class="discussion-date">{{ d.createdAt | date:'mediumDate' }}</span>
+          @if (d.linkedTask) {
+            <span class="linked-badge">Has linked task</span>
+          }
+        </div>
+      </a>
+    }
+  </div>
+}

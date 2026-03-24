@@ -1,0 +1,131 @@
+<div class="page-header">
+  <h1 class="page-title">{{ isEdit() ? 'Edit Release' : 'New Release' }}</h1>
+</div>
+
+@if (loading()) {
+  <div class="card form-card" style="text-align: center; padding: 3rem;">Loading...</div>
+}
+
+@if (!loading()) {
+<div class="card form-card">
+  <form (ngSubmit)="onSubmit()">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="project">Project *</label>
+        <select class="form-select" id="project" [(ngModel)]="form.project" name="project" required (ngModelChange)="onProjectChange()">
+          <option value="">Select project</option>
+          @for (p of projects(); track p._id) {
+            <option [value]="p._id">{{ p.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="version">Version *</label>
+        <input
+          class="form-input"
+          id="version"
+          type="text"
+          [(ngModel)]="form.version"
+          name="version"
+          placeholder="e.g. v1.3"
+          required
+        />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="releaseDate">Release Date *</label>
+        <input
+          class="form-input"
+          id="releaseDate"
+          type="date"
+          [(ngModel)]="form.releaseDate"
+          name="releaseDate"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="sprint">Sprint</label>
+        <select class="form-select" id="sprint" [(ngModel)]="form.sprint" name="sprint">
+          <option value="">No sprint</option>
+          @for (s of sprints(); track s._id) {
+            <option [value]="s._id">{{ s.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="description">Description</label>
+      <textarea
+        class="form-textarea"
+        id="description"
+        [(ngModel)]="form.description"
+        name="description"
+        placeholder="Summary of this release..."
+      ></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="changes">Changes (one per line)</label>
+      <textarea
+        class="form-textarea changes-area"
+        id="changes"
+        [(ngModel)]="form.changesText"
+        name="changesText"
+        placeholder="Improved reading UI&#10;Fixed login bug&#10;Added analytics feature"
+      ></textarea>
+    </div>
+
+    @if (snapshotInputs.length > 0) {
+      <div class="metric-snapshots-section">
+        <h3 class="section-title">Metric Impact</h3>
+        <p class="section-hint">Record how this release impacts key metrics.</p>
+        <div class="snapshot-grid">
+          @for (s of snapshotInputs; track s.metricId) {
+            <div class="snapshot-card">
+              <div class="snapshot-header">
+                <span class="snapshot-name">{{ s.metricName }}</span>
+                @if (s.metricUnit) {
+                  <span class="snapshot-unit">{{ s.metricUnit }}</span>
+                }
+              </div>
+              <div class="snapshot-inputs">
+                <div class="snapshot-field">
+                  <label class="snapshot-label">Previous</label>
+                  <input class="form-input" type="number" [(ngModel)]="s.previousValue" [name]="'prev_' + s.metricId" placeholder="0" />
+                </div>
+                <div class="snapshot-field">
+                  <label class="snapshot-label">Current</label>
+                  <input class="form-input" type="number" [(ngModel)]="s.currentValue" [name]="'curr_' + s.metricId" placeholder="0" />
+                </div>
+                <div class="snapshot-change">
+                  @if (s.previousValue != null && s.currentValue != null && s.previousValue !== 0) {
+                    @let pct = ((s.currentValue! - s.previousValue!) / s.previousValue!) * 100;
+                    <span class="change-badge"
+                      [class.positive]="pct > 0"
+                      [class.negative]="pct < 0"
+                      [class.neutral]="pct === 0">
+                      {{ pct > 0 ? '+' : '' }}{{ pct | number:'1.0-1' }}%
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="form-actions">
+      <a routerLink="/releases" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving...' : (isEdit() ? 'Update Release' : 'Create Release') }}
+      </button>
+    </div>
+  </form>
+</div>
+}

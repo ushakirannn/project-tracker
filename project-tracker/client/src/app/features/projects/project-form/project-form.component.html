@@ -1,0 +1,114 @@
+<div class="page-header">
+  <h1 class="page-title">{{ isEdit() ? 'Edit Project' : 'New Project' }}</h1>
+</div>
+
+@if (loading()) {
+  <div class="card form-card" style="text-align: center; padding: 3rem;">Loading...</div>
+}
+
+@if (!loading()) {
+<div class="card form-card">
+  <form (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label class="form-label" for="name">Project Name *</label>
+      <input
+        class="form-input"
+        id="name"
+        type="text"
+        [(ngModel)]="form.name"
+        name="name"
+        placeholder="e.g. GRE App"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="description">Description</label>
+      <textarea
+        class="form-textarea"
+        id="description"
+        [(ngModel)]="form.description"
+        name="description"
+        placeholder="What is this project about?"
+      ></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="owner">Owner</label>
+        <select class="form-select" id="owner" [(ngModel)]="form.owner" name="owner">
+          <option value="">Select owner</option>
+          @for (user of users(); track user._id) {
+            <option [value]="user._id">{{ user.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="status">Status</label>
+        <select class="form-select" id="status" [(ngModel)]="form.status" name="status">
+          @for (status of statusOptions; track status) {
+            <option [value]="status">{{ status }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="startDate">Start Date</label>
+        <input
+          class="form-input"
+          id="startDate"
+          type="date"
+          [(ngModel)]="form.startDate"
+          name="startDate"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="repoLink">Repository Link</label>
+        <input
+          class="form-input"
+          id="repoLink"
+          type="url"
+          [(ngModel)]="form.repoLink"
+          name="repoLink"
+          placeholder="https://github.com/..."
+        />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="currentFocus">Current Focus</label>
+      <input
+        class="form-input"
+        id="currentFocus"
+        type="text"
+        [(ngModel)]="form.currentFocus"
+        name="currentFocus"
+        placeholder="What is the team currently working on? (1-2 sentences)"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="prodUrl">Production URL</label>
+      <input
+        class="form-input"
+        id="prodUrl"
+        type="url"
+        [(ngModel)]="form.prodUrl"
+        name="prodUrl"
+        placeholder="https://..."
+      />
+    </div>
+
+    <div class="form-actions">
+      <a routerLink="/projects" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving...' : (isEdit() ? 'Update Project' : 'Create Project') }}
+      </button>
+    </div>
+  </form>
+</div>
+}

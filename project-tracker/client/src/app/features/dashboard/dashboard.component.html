@@ -1,0 +1,272 @@
+<div class="dashboard-header">
+  <div>
+    <h1>Welcome back{{ authService.user()?.name ? ', ' + authService.user()!.name : '' }}</h1>
+    <p class="text-secondary">Here's what's happening across your projects.</p>
+  </div>
+</div>
+
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (stats(); as s) {
+  <!-- Project Stats -->
+  <div class="stats-grid">
+    <a routerLink="/projects" class="stat-card card">
+      <span class="stat-value">{{ s.projects.total }}</span>
+      <span class="stat-label">Total Projects</span>
+    </a>
+    <a routerLink="/projects" [queryParams]="{ status: 'active' }" class="stat-card card">
+      <span class="stat-value stat-active">{{ s.projects.active }}</span>
+      <span class="stat-label">Active Projects</span>
+    </a>
+    <a routerLink="/tasks" class="stat-card card">
+      <span class="stat-value">{{ s.tasks.total }}</span>
+      <span class="stat-label">Total Tasks</span>
+    </a>
+    <a routerLink="/tasks" [queryParams]="{ status: 'blocked' }" class="stat-card card">
+      <span class="stat-value stat-blocked">{{ s.tasks.blocked }}</span>
+      <span class="stat-label">Blocked Tasks</span>
+    </a>
+  </div>
+
+  <!-- Projects Overview -->
+  @if (projectsOverview().length > 0) {
+    <div class="card projects-overview">
+      <div class="card-header">
+        <h3 class="card-title">Projects Overview</h3>
+        <a routerLink="/projects" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      <div class="table-wrapper">
+        <table class="overview-table">
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Status</th>
+              <th>Current Focus</th>
+              <th>Open Tasks</th>
+              <th>Current Sprint</th>
+              <th>Last Release</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of projectsOverview(); track p._id) {
+              <tr class="overview-row" [routerLink]="['/projects', p._id]">
+                <td class="project-name-cell">{{ p.name }}</td>
+                <td>
+                  <span class="status-badge" [class]="getStatusClass(p.status)">{{ getStatusLabel(p.status) }}</span>
+                </td>
+                <td class="focus-cell">
+                  @if (p.currentFocus) {
+                    <span class="focus-text">{{ p.currentFocus }}</span>
+                  } @else {
+                    <span class="text-secondary">—</span>
+                  }
+                </td>
+                <td>
+                  <span class="open-tasks-count" [class.has-tasks]="p.openTasks > 0">{{ p.openTasks }}</span>
+                </td>
+                <td class="text-secondary">{{ p.currentSprint || '—' }}</td>
+                <td>
+                  @if (p.lastRelease) {
+                    <span class="release-badge">{{ p.lastRelease }}</span>
+                  } @else {
+                    <span class="text-secondary">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- My Tasks & Upcoming Deadlines Row -->
+  <div class="two-col-grid">
+    <!-- My Tasks Widget -->
+    <div class="card my-tasks-widget">
+      <div class="card-header">
+        <h3 class="card-title">My Tasks</h3>
+        <a routerLink="/tasks" [queryParams]="{ assignedTo: 'me' }" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      @if (myTasks().length === 0) {
+        <p class="text-secondary text-sm empty-msg">No tasks assigned to you.</p>
+      } @else {
+        <div class="my-tasks-list">
+          @for (t of myTasks(); track t._id) {
+            <a [routerLink]="['/tasks', t._id]" class="my-task-item">
+              <div class="my-task-header">
+                <span class="my-task-title">{{ t.title }}</span>
+                <span class="priority-badge" [class]="getPriorityClass(t.priority)">{{ t.priority }}</span>
+              </div>
+              <div class="my-task-meta">
+                <span class="text-secondary">{{ t.project?.name || 'No project' }}</span>
+                <span class="task-status-dot" [attr.data-status]="t.status">{{ t.status === 'in-progress' ? 'In Progress' : t.status }}</span>
+                @if (t.deadline) {
+                  <span class="task-deadline" [class]="getDeadlineClass(t.deadline)">{{ t.deadline | date:'MMM d' }}</span>
+                }
+              </div>
+            </a>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Upcoming Deadlines Widget -->
+    <div class="card deadlines-widget">
+      <div class="card-header">
+        <h3 class="card-title">Upcoming Deadlines</h3>
+      </div>
+      @if (upcomingDeadlines().length === 0) {
+        <p class="text-secondary text-sm empty-msg">No upcoming deadlines.</p>
+      } @else {
+        <div class="deadlines-list">
+          @for (t of upcomingDeadlines(); track t._id) {
+            <a [routerLink]="['/tasks', t._id]" class="deadline-item">
+              <div class="deadline-info">
+                <span class="deadline-title">{{ t.title }}</span>
+                <span class="text-secondary text-sm">{{ t.project?.name }} · {{ t.assignedTo?.name || 'Unassigned' }}</span>
+              </div>
+              <span class="deadline-date" [class]="getDeadlineClass(t.deadline)">{{ t.deadline | date:'MMM d' }}</span>
+            </a>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Upcoming Roadmap Items -->
+  @if (upcomingRoadmap().length > 0) {
+    <div class="card roadmap-widget">
+      <div class="card-header">
+        <h3 class="card-title">Upcoming Roadmap Items</h3>
+      </div>
+      <div class="roadmap-items-list">
+        @for (item of upcomingRoadmap(); track item._id) {
+          <a [routerLink]="['/projects', item.project?._id || item.project]" class="roadmap-item">
+            <div class="roadmap-item-left">
+              <span class="roadmap-item-project">{{ item.project?.name || 'Unknown' }}</span>
+              <span class="roadmap-item-title">{{ item.title }}</span>
+            </div>
+            <div class="roadmap-item-right">
+              <span class="roadmap-item-status" [class]="getRoadmapStatusClass(item.status)">{{ getRoadmapStatusLabel(item.status) }}</span>
+              @if (item.taskCount) {
+                <span class="roadmap-item-tasks">{{ item.completedTaskCount }}/{{ item.taskCount }}</span>
+              }
+              @if (item.targetDate) {
+                <span class="roadmap-item-date">{{ item.targetDate | date:'MMM d' }}</span>
+              }
+            </div>
+          </a>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="dashboard-grid">
+    <!-- Current Sprint Widget -->
+    <div class="card sprint-widget">
+      <div class="card-header">
+        <h3 class="card-title">Current Sprint</h3>
+        @if (s.currentSprint) {
+          <a [routerLink]="['/sprints', s.currentSprint.sprint._id]" class="btn btn-ghost btn-sm">View</a>
+        }
+      </div>
+      @if (s.currentSprint; as cs) {
+        <div class="sprint-name">{{ cs.sprint.name }}</div>
+        <div class="sprint-date text-sm text-secondary">
+          {{ cs.sprint.startDate | date:'MMM d' }} - {{ cs.sprint.endDate | date:'MMM d' }}
+        </div>
+        <div class="sprint-progress">
+          <div class="progress-header">
+            <span class="text-sm">Progress</span>
+            <span class="text-sm progress-pct">{{ cs.progress }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="cs.progress"></div>
+          </div>
+        </div>
+        <div class="sprint-mini-stats">
+          <div class="mini-stat">
+            <span class="mini-value">{{ cs.planned }}</span>
+            <span class="mini-label">Planned</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-value text-info">{{ cs.inProgress }}</span>
+            <span class="mini-label">In Progress</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-value text-danger">{{ cs.blocked }}</span>
+            <span class="mini-label">Blocked</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-value text-success">{{ cs.completed }}</span>
+            <span class="mini-label">Done</span>
+          </div>
+        </div>
+      } @else {
+        <p class="text-secondary text-sm empty-msg">No active sprint. <a routerLink="/sprints/new">Create one</a></p>
+      }
+    </div>
+
+    <!-- Task Summary Widget -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Task Summary</h3>
+        <a routerLink="/tasks/board" class="btn btn-ghost btn-sm">Board</a>
+      </div>
+      <div class="task-summary">
+        <div class="summary-row">
+          <span class="summary-dot" style="background:#64748b"></span>
+          <span class="summary-label">Planned</span>
+          <span class="summary-value">{{ s.tasks.planned }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-dot" style="background:#2563eb"></span>
+          <span class="summary-label">In Progress</span>
+          <span class="summary-value">{{ s.tasks.inProgress }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-dot" style="background:#dc2626"></span>
+          <span class="summary-label">Blocked</span>
+          <span class="summary-value">{{ s.tasks.blocked }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-dot" style="background:#f59e0b"></span>
+          <span class="summary-label">Testing</span>
+          <span class="summary-value">{{ s.tasks.testing }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-dot" style="background:#16a34a"></span>
+          <span class="summary-label">Completed</span>
+          <span class="summary-value">{{ s.tasks.completed }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity Widget -->
+    <div class="card activity-widget">
+      <div class="card-header">
+        <h3 class="card-title">Recent Activity</h3>
+      </div>
+      @if (activities().length === 0) {
+        <p class="text-secondary text-sm empty-msg">No activity yet.</p>
+      } @else {
+        <div class="activity-list">
+          @for (a of activities(); track a._id) {
+            <div class="activity-item">
+              <span class="activity-icon" [attr.data-type]="a.entityType">{{ getActivityIcon(a.entityType) }}</span>
+              <div class="activity-content">
+                <span class="activity-text">
+                  <strong>{{ a.user?.name || 'Someone' }}</strong>
+                  {{ a.action }}
+                  <span class="activity-entity">{{ a.entityName }}</span>
+                </span>
+                <span class="activity-time">{{ a.timestamp | date:'short' }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

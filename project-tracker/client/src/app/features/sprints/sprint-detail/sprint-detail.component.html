@@ -1,0 +1,151 @@
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (sprint(); as s) {
+  <div class="page-header">
+    <div class="page-header-left">
+      <a routerLink="/sprints" class="back-link">Sprints</a>
+      <span class="separator">/</span>
+      <h1 class="page-title">{{ s.name }}</h1>
+      <app-status-badge [status]="s.status" />
+    </div>
+    <div class="page-header-actions">
+      <a [routerLink]="['/tasks/new']" [queryParams]="{ sprint: s._id }" class="btn btn-primary">+ Add Task</a>
+      <a [routerLink]="['/sprints', s._id, 'edit']" class="btn btn-secondary">Edit</a>
+      <button class="btn btn-danger" (click)="confirmDelete()">Delete</button>
+    </div>
+  </div>
+
+  <!-- Sprint Info & Progress -->
+  <div class="sprint-info">
+    <div class="card sprint-dates-card">
+      <div class="date-range">
+        <span>{{ s.startDate | date:'MMM d' }} - {{ s.endDate | date:'MMM d, y' }}</span>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card card">
+        <span class="stat-value">{{ stats().total }}</span>
+        <span class="stat-label">Total</span>
+      </div>
+      <div class="stat-card card">
+        <span class="stat-value stat-completed">{{ stats().completed }}</span>
+        <span class="stat-label">Completed</span>
+      </div>
+      <div class="stat-card card">
+        <span class="stat-value stat-progress">{{ stats().inProgress }}</span>
+        <span class="stat-label">In Progress</span>
+      </div>
+      <div class="stat-card card">
+        <span class="stat-value stat-blocked">{{ stats().blocked }}</span>
+        <span class="stat-label">Blocked</span>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    @if (stats().total > 0) {
+      <div class="progress-bar-wrapper card">
+        <div class="progress-header">
+          <span>Sprint Progress</span>
+          <span class="progress-pct">{{ stats().progress }}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="stats().progress"></div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- View Toggle -->
+  <div class="view-toggle">
+    <button class="toggle-btn" [class.active]="viewMode() === 'board'" (click)="viewMode.set('board')">Board</button>
+    <button class="toggle-btn" [class.active]="viewMode() === 'list'" (click)="viewMode.set('list')">List</button>
+  </div>
+
+  @if (tasks().length === 0) {
+    <app-empty-state
+      title="No tasks in this sprint"
+      message="Assign tasks to this sprint from the Tasks page."
+    />
+  } @else if (viewMode() === 'board') {
+    <!-- Kanban Board -->
+    <div class="kanban-board">
+      @for (group of statusGroups; track group.status) {
+        <div class="kanban-column"
+             (dragover)="onDragOver($event)"
+             (drop)="onDrop($event, group.status)">
+          <div class="kanban-column-header">
+            <span class="group-dot" [style.background-color]="group.color"></span>
+            <span class="kanban-column-title">{{ group.label }}</span>
+            <span class="group-count">{{ getTasksByStatus(group.status).length }}</span>
+          </div>
+          <div class="kanban-cards">
+            @for (task of getTasksByStatus(group.status); track task._id) {
+              <div class="kanban-card card"
+                   draggable="true"
+                   (dragstart)="onDragStart(task)"
+                   [routerLink]="['/tasks', task._id]">
+                <span class="kanban-card-title">{{ task.title }}</span>
+                <span class="kanban-card-project">{{ task.project?.name }}</span>
+                <div class="kanban-card-footer">
+                  <app-status-badge [status]="task.priority" [label]="task.priority" />
+                  @if (task.assignedTo?.name) {
+                    <span class="kanban-card-assignee">{{ task.assignedTo.name }}</span>
+                  }
+                  @if (task.deadline) {
+                    <span class="kanban-card-deadline">{{ task.deadline | date:'MMM d' }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- List View (existing) -->
+    <div class="task-groups">
+      @for (group of statusGroups; track group.status) {
+        @if (getTasksByStatus(group.status).length > 0) {
+          <div class="task-group">
+            <div class="group-header">
+              <span class="group-dot" [style.background-color]="group.color"></span>
+              <h3 class="group-title">{{ group.label }}</h3>
+              <span class="group-count">{{ getTasksByStatus(group.status).length }}</span>
+            </div>
+            <div class="group-tasks">
+              @for (task of getTasksByStatus(group.status); track task._id) {
+                <a [routerLink]="['/tasks', task._id]" class="task-item card">
+                  <div class="task-item-left">
+                    <span class="task-item-title">{{ task.title }}</span>
+                    <span class="task-item-project">{{ task.project?.name }}</span>
+                  </div>
+                  <div class="task-item-right">
+                    <app-status-badge [status]="task.priority" [label]="task.priority" />
+                    @if (task.assignedTo?.name) {
+                      <span class="task-item-assignee">{{ task.assignedTo.name }}</span>
+                    }
+                  </div>
+                </a>
+              }
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- Delete Confirmation -->
+  @if (showDeleteConfirm()) {
+    <div class="modal-overlay" (click)="cancelDelete()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Delete Sprint</h3>
+        <p>Are you sure you want to delete <strong>{{ s.name }}</strong>? Tasks will be unassigned from this sprint.</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="cancelDelete()">Cancel</button>
+          <button class="btn btn-danger" (click)="deleteSprint()">Delete</button>
+        </div>
+      </div>
+    </div>
+  }
+}

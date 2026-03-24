@@ -1,0 +1,122 @@
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (task(); as t) {
+  <div class="page-header">
+    <div class="page-header-left">
+      <a routerLink="/tasks" class="back-link">Tasks</a>
+      <span class="separator">/</span>
+      <h1 class="page-title">{{ t.title }}</h1>
+    </div>
+    <div class="page-header-actions">
+      <a [routerLink]="['/tasks', t._id, 'edit']" class="btn btn-secondary">Edit</a>
+      <button class="btn btn-danger" (click)="confirmDelete()">Delete</button>
+    </div>
+  </div>
+
+  <div class="task-layout">
+    <!-- Main Content -->
+    <div class="task-main">
+      <!-- Quick Status Bar -->
+      <div class="status-bar card">
+        <span class="status-label">Status:</span>
+        @for (s of statusOptions; track s) {
+          <button
+            class="status-btn"
+            [class.active]="t.status === s"
+            [class]="'status-btn-' + s"
+            (click)="quickStatusUpdate(s)"
+          >
+            {{ s }}
+          </button>
+        }
+      </div>
+
+      <!-- Description -->
+      <div class="card">
+        <h3 class="card-title">Description</h3>
+        @if (t.description) {
+          <p class="description">{{ t.description }}</p>
+        } @else {
+          <p class="text-secondary text-sm">No description provided.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Sidebar Details -->
+    <div class="task-sidebar">
+      <div class="card">
+        <h3 class="card-title">Details</h3>
+        <div class="detail-list">
+          <div class="detail-row">
+            <span class="detail-label">Project</span>
+            @if (t.project?._id) {
+              <a [routerLink]="['/projects', t.project._id]" class="detail-value link">{{ t.project.name }}</a>
+            } @else {
+              <span class="detail-value">-</span>
+            }
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Status</span>
+            <app-status-badge [status]="t.status" />
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Priority</span>
+            <app-status-badge [status]="t.priority" [label]="t.priority" />
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Category</span>
+            <span class="detail-value capitalize">{{ t.category || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Assigned To</span>
+            <span class="detail-value">{{ t.assignedTo?.name || 'Unassigned' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Sprint</span>
+            <span class="detail-value">{{ t.sprint?.name || 'None' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Start Date</span>
+            <span class="detail-value">{{ t.startDate ? (t.startDate | date:'mediumDate') : 'Not set' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Deadline</span>
+            <span class="detail-value">{{ t.deadline ? (t.deadline | date:'mediumDate') : 'Not set' }}</span>
+          </div>
+          @if (t.tags && t.tags.length > 0) {
+            <div class="detail-row">
+              <span class="detail-label">Tags</span>
+              <div class="detail-tags">
+                @for (tag of t.tags; track tag) {
+                  <span class="tag-badge">{{ tag }}</span>
+                }
+              </div>
+            </div>
+          }
+          <div class="detail-row">
+            <span class="detail-label">Created By</span>
+            <span class="detail-value">{{ t.createdBy?.name || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Created</span>
+            <span class="detail-value">{{ t.createdAt | date:'mediumDate' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation -->
+  @if (showDeleteConfirm()) {
+    <div class="modal-overlay" (click)="cancelDelete()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Delete Task</h3>
+        <p>Are you sure you want to delete <strong>{{ t.title }}</strong>?</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="cancelDelete()">Cancel</button>
+          <button class="btn btn-danger" (click)="deleteTask()">Delete</button>
+        </div>
+      </div>
+    </div>
+  }
+}

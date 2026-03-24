@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx ng:*)",
+      "Bash(mongod:*)",
+      "Bash(npx:*)",
+      "Bash(do echo:*)",
+      "Bash(__NEW_LINE_f684d98ee9ceb25f__ echo:*)",
+      "Bash(__NEW_LINE_67c6008900f226e2__ echo:*)",
+      "Bash(curl:*)",
+      "Bash(powershell:*)"
+    ]
+  }
+}

@@ -1,0 +1,98 @@
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (discussion(); as d) {
+  <div class="page-header">
+    <div class="page-header-left">
+      <a routerLink="/discussions" class="back-link">Discussions</a>
+      <span class="separator">/</span>
+      <h1 class="page-title">{{ d.title }}</h1>
+    </div>
+    <div class="page-header-actions">
+      @if (!d.linkedTask) {
+        <button class="btn btn-secondary" (click)="showCreateTask.set(true)">Create Task</button>
+      } @else {
+        <a [routerLink]="['/tasks', d.linkedTask]" class="btn btn-ghost btn-sm">View Linked Task</a>
+      }
+      <a [routerLink]="['/discussions', d._id, 'edit']" class="btn btn-secondary">Edit</a>
+      <button class="btn btn-danger" (click)="confirmDelete()">Delete</button>
+    </div>
+  </div>
+
+  <div class="discussion-layout">
+    <!-- Main content -->
+    <div class="card">
+      <div class="discussion-meta">
+        <a [routerLink]="['/projects', d.project?._id]" class="project-link">{{ d.project?.name }}</a>
+        <span class="meta-dot"></span>
+        <span class="meta-author">{{ d.createdBy?.name }}</span>
+        <span class="meta-dot"></span>
+        <span>{{ d.createdAt | date:'medium' }}</span>
+      </div>
+      <div class="discussion-body">{{ d.content }}</div>
+    </div>
+
+    <!-- Comments -->
+    <div class="comments-section">
+      <h3 class="section-title">Comments ({{ comments().length }})</h3>
+
+      @for (comment of comments(); track comment._id) {
+        <div class="comment card">
+          <div class="comment-header">
+            <strong>{{ comment.user?.name }}</strong>
+            <span class="comment-date">{{ comment.createdAt | date:'medium' }}</span>
+          </div>
+          <div class="comment-body">{{ comment.content }}</div>
+        </div>
+      }
+
+      <div class="comment-form">
+        <textarea
+          class="form-textarea"
+          [(ngModel)]="newComment"
+          placeholder="Add a comment..."
+          rows="3"
+        ></textarea>
+        <button
+          class="btn btn-primary"
+          (click)="submitComment()"
+          [disabled]="addingComment() || !newComment.trim()"
+        >
+          {{ addingComment() ? 'Posting...' : 'Post Comment' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Task Modal -->
+  @if (showCreateTask()) {
+    <div class="modal-overlay" (click)="showCreateTask.set(false)">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Create Task from Discussion</h3>
+        <div class="form-group">
+          <label class="form-label">Task Title</label>
+          <input class="form-input" type="text" [(ngModel)]="taskTitle" />
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="showCreateTask.set(false)">Cancel</button>
+          <button class="btn btn-primary" (click)="createTaskFromDiscussion()" [disabled]="creatingTask()">
+            {{ creatingTask() ? 'Creating...' : 'Create Task' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Delete Modal -->
+  @if (showDeleteConfirm()) {
+    <div class="modal-overlay" (click)="cancelDelete()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Delete Discussion</h3>
+        <p>Are you sure you want to delete <strong>{{ d.title }}</strong>? All comments will also be deleted.</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="cancelDelete()">Cancel</button>
+          <button class="btn btn-danger" (click)="deleteDiscussion()">Delete</button>
+        </div>
+      </div>
+    </div>
+  }
+}

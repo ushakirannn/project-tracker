@@ -1,0 +1,58 @@
+<div class="page-header">
+  <h1 class="page-title">Activity Timeline</h1>
+</div>
+
+<div class="filters">
+  <div class="filter-group">
+    <label class="form-label" for="entityType">Entity Type</label>
+    <select class="form-select" id="entityType" [(ngModel)]="filterEntityType" (change)="loadActivities()">
+      <option value="">All</option>
+      @for (type of entityTypes; track type) {
+        <option [value]="type">{{ type }}</option>
+      }
+    </select>
+  </div>
+  <div class="filter-group">
+    <label class="form-label" for="limit">Show</label>
+    <select class="form-select" id="limit" [(ngModel)]="filterLimit" (change)="loadActivities()">
+      <option value="25">25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+  </div>
+</div>
+
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (activities().length === 0) {
+  <app-empty-state title="No activities" message="No activities match your filters." />
+} @else {
+  <div class="timeline">
+    @for (activity of activities(); track activity._id) {
+      <div class="timeline-item">
+        <div class="timeline-icon" [attr.data-type]="activity.entityType">
+          {{ getIcon(activity.entityType) }}
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-header">
+            <span class="timeline-user">{{ activity.user?.name || 'System' }}</span>
+            <span class="timeline-action">{{ activity.action }}</span>
+            @if (getEntityRoute(activity); as route) {
+              <a [routerLink]="route" class="timeline-entity">{{ activity.entityName }}</a>
+            } @else {
+              <span class="timeline-entity">{{ activity.entityName }}</span>
+            }
+          </div>
+          @if (activity.metadata) {
+            <div class="timeline-meta">
+              @if (activity.metadata['field']) {
+                <span class="meta-change">{{ activity.metadata['field'] }}: {{ activity.metadata['from'] }} → {{ activity.metadata['to'] }}</span>
+              }
+            </div>
+          }
+          <div class="timeline-time">{{ activity.timestamp | date:'medium' }}</div>
+        </div>
+      </div>
+    }
+  </div>
+}

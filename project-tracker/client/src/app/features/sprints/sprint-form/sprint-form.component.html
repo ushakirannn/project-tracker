@@ -1,0 +1,68 @@
+<div class="page-header">
+  <h1 class="page-title">{{ isEdit() ? 'Edit Sprint' : 'New Sprint' }}</h1>
+</div>
+
+@if (loading()) {
+  <div class="card form-card" style="text-align: center; padding: 3rem;">Loading...</div>
+}
+
+@if (!loading()) {
+<div class="card form-card">
+  <form (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label class="form-label" for="name">Sprint Name *</label>
+      <input
+        class="form-input"
+        id="name"
+        type="text"
+        [(ngModel)]="form.name"
+        name="name"
+        placeholder="e.g. March Sprint 1"
+        required
+      />
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="startDate">Start Date *</label>
+        <input
+          class="form-input"
+          id="startDate"
+          type="date"
+          [(ngModel)]="form.startDate"
+          name="startDate"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="endDate">End Date *</label>
+        <input
+          class="form-input"
+          id="endDate"
+          type="date"
+          [(ngModel)]="form.endDate"
+          name="endDate"
+          required
+        />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="status">Status</label>
+      <select class="form-select" id="status" [(ngModel)]="form.status" name="status">
+        @for (s of statusOptions; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-actions">
+      <a routerLink="/sprints" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving...' : (isEdit() ? 'Update Sprint' : 'Create Sprint') }}
+      </button>
+    </div>
+  </form>
+</div>
+}

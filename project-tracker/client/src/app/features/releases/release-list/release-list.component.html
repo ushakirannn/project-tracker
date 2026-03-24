@@ -1,0 +1,46 @@
+<div class="page-header">
+  <h1 class="page-title">Releases</h1>
+  <div class="page-actions">
+    <select class="form-select project-filter" [(ngModel)]="projectFilter" (ngModelChange)="onProjectFilterChange()">
+      <option value="">All Projects</option>
+      @for (p of projects(); track p._id) {
+        <option [value]="p._id">{{ p.name }}</option>
+      }
+    </select>
+    <a routerLink="/releases/new" class="btn btn-primary">+ New Release</a>
+  </div>
+</div>
+
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (releases().length === 0) {
+  <app-empty-state
+    title="No releases yet"
+    message="Record your first release to start tracking product evolution."
+  />
+} @else {
+  <div class="release-list">
+    @for (release of releases(); track release._id) {
+      <a [routerLink]="['/releases', release._id]" class="release-card card">
+        <div class="release-header">
+          <div class="release-version">{{ release.version }}</div>
+          <span class="release-project">{{ release.project?.name }}</span>
+        </div>
+        <div class="release-date">{{ release.releaseDate | date:'mediumDate' }}</div>
+        @if (release.description) {
+          <p class="release-description">{{ release.description }}</p>
+        }
+        @if (release.changes && release.changes.length > 0) {
+          <div class="release-changes">
+            @for (change of release.changes.slice(0, 3); track $index) {
+              <span class="change-item">{{ change }}</span>
+            }
+            @if (release.changes.length > 3) {
+              <span class="change-more">+{{ release.changes.length - 3 }} more</span>
+            }
+          </div>
+        }
+      </a>
+    }
+  </div>
+}

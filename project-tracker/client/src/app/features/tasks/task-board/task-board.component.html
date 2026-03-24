@@ -1,0 +1,55 @@
+<div class="page-header">
+  <h1 class="page-title">Task Board</h1>
+  <div class="page-actions">
+    <select class="form-select project-filter" [(ngModel)]="projectFilter" (ngModelChange)="onProjectFilterChange()">
+      <option value="">All Projects</option>
+      @for (p of projects(); track p._id) {
+        <option [value]="p._id">{{ p.name }}</option>
+      }
+    </select>
+    <a routerLink="/tasks" class="btn btn-secondary">List View</a>
+    <a routerLink="/tasks/new" class="btn btn-primary">+ New Task</a>
+  </div>
+</div>
+
+@if (loading()) {
+  <app-loading-spinner />
+} @else {
+  <div class="board">
+    @for (col of columns; track col.status) {
+      <div
+        class="board-column"
+        (dragover)="onDragOver($event)"
+        (drop)="onDrop($event, col.status)"
+      >
+        <div class="column-header">
+          <span class="column-dot" [style.background-color]="col.color"></span>
+          <span class="column-title">{{ col.label }}</span>
+          <span class="column-count">{{ getTasksForColumn(col.status).length }}</span>
+        </div>
+        <div class="column-body">
+          @for (task of getTasksForColumn(col.status); track task._id) {
+            <a
+              class="board-card"
+              [routerLink]="['/tasks', task._id]"
+              draggable="true"
+              (dragstart)="onDragStart($event, task)"
+            >
+              <div class="board-card-title">{{ task.title }}</div>
+              <div class="board-card-meta">
+                <span class="board-card-project">{{ task.project?.name }}</span>
+                <app-status-badge [status]="task.priority" [label]="task.priority" />
+              </div>
+              @if (task.assignedTo?.name) {
+                <div class="board-card-assignee">{{ task.assignedTo.name }}</div>
+              }
+            </a>
+          }
+          @if (getTasksForColumn(col.status).length === 0) {
+            <div class="column-empty">No tasks</div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}

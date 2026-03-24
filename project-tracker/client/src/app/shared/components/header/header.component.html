@@ -1,0 +1,96 @@
+<header class="header">
+  <div class="header-left">
+    <h1 class="header-title">{{ pageTitle }}</h1>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-primary btn-sm quick-task-btn" (click)="openQuickTask()">+ Create Task</button>
+    <div class="search-trigger" (click)="goToSearch()">
+      <span class="search-icon">Search</span>
+      <span class="search-shortcut">Ctrl+K</span>
+    </div>
+  </div>
+</header>
+
+@if (showQuickTask()) {
+  <div class="modal-overlay" (click)="closeQuickTask()">
+    <div class="quick-task-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Quick Create Task</h3>
+        <button class="modal-close" (click)="closeQuickTask()">&times;</button>
+      </div>
+      <form (ngSubmit)="submitQuickTask()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="qt-title">Task Title *</label>
+            <input class="form-input" id="qt-title" type="text" [(ngModel)]="quickForm.title" name="title" placeholder="What needs to be done?" autofocus required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="qt-project">Project</label>
+              <select class="form-select" id="qt-project" [(ngModel)]="quickForm.project" name="project" (ngModelChange)="onQuickProjectChange()">
+                <option value="">Miscellaneous</option>
+                @for (p of projects(); track p._id) {
+                  <option [value]="p._id">{{ p.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="qt-assignedTo">Assign To</label>
+              <select class="form-select" id="qt-assignedTo" [(ngModel)]="quickForm.assignedTo" name="assignedTo">
+                <option value="">Unassigned</option>
+                @for (u of users(); track u._id) {
+                  <option [value]="u._id">{{ u.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row three-cols">
+            <div class="form-group">
+              <label class="form-label" for="qt-priority">Priority</label>
+              <select class="form-select" id="qt-priority" [(ngModel)]="quickForm.priority" name="priority">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="qt-sprint">Sprint</label>
+              <select class="form-select" id="qt-sprint" [(ngModel)]="quickForm.sprint" name="sprint">
+                <option value="">No sprint</option>
+                @for (s of sprints(); track s._id) {
+                  <option [value]="s._id">{{ s.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="qt-deadline">Deadline</label>
+              <input class="form-input" id="qt-deadline" type="date" [(ngModel)]="quickForm.deadline" name="deadline" />
+            </div>
+          </div>
+
+          @if (roadmapItems().length > 0) {
+            <div class="form-group">
+              <label class="form-label" for="qt-roadmap">Roadmap Initiative</label>
+              <select class="form-select" id="qt-roadmap" [(ngModel)]="quickForm.roadmapItem" name="roadmapItem">
+                <option value="">None</option>
+                @for (r of roadmapItems(); track r._id) {
+                  <option [value]="r._id">{{ r.title }}</option>
+                }
+              </select>
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeQuickTask()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving() || !quickForm.title.trim()">
+            {{ saving() ? 'Creating...' : 'Create Task' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

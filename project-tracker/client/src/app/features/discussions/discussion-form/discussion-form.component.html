@@ -1,0 +1,41 @@
+<div class="page-header">
+  <h1 class="page-title">{{ isEdit() ? 'Edit Discussion' : 'New Discussion' }}</h1>
+</div>
+
+@if (loading()) {
+  <div class="card form-card" style="text-align: center; padding: 3rem;">Loading...</div>
+}
+
+@if (!loading()) {
+<div class="card form-card">
+  <form (ngSubmit)="onSubmit()">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="project">Project *</label>
+        <select class="form-select" id="project" [(ngModel)]="form.project" name="project" required>
+          <option value="">Select project</option>
+          @for (p of projects(); track p._id) {
+            <option [value]="p._id">{{ p.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="title">Title *</label>
+        <input class="form-input" id="title" type="text" [(ngModel)]="form.title" name="title" placeholder="e.g. AI explanation feature" required />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="content">Content *</label>
+      <textarea class="form-textarea content-area" id="content" [(ngModel)]="form.content" name="content" placeholder="Describe the discussion, decision, or idea..." required></textarea>
+    </div>
+
+    <div class="form-actions">
+      <a routerLink="/discussions" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving...' : (isEdit() ? 'Update' : 'Create Discussion') }}
+      </button>
+    </div>
+  </form>
+</div>
+}

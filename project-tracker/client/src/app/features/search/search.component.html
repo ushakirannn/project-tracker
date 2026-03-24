@@ -1,0 +1,102 @@
+<div class="page-header">
+  <h1 class="page-title">Search</h1>
+</div>
+
+<div class="search-box">
+  <input
+    class="form-input search-input"
+    id="search-input"
+    type="text"
+    [(ngModel)]="query"
+    (keyup.enter)="search()"
+    placeholder="Search projects, tasks, discussions, releases... (Ctrl+K)"
+    autofocus
+  />
+  <button class="btn btn-primary" (click)="search()" [disabled]="loading()">Search</button>
+</div>
+
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (results(); as r) {
+  <p class="result-count">{{ totalResults }} results found for "{{ query }}"</p>
+
+  @if (r.projects.length > 0) {
+    <div class="result-section">
+      <h2 class="result-section-title">Projects ({{ r.projects.length }})</h2>
+      <div class="result-list">
+        @for (p of r.projects; track p._id) {
+          <a [routerLink]="['/projects', p._id]" class="result-item card">
+            <div class="result-item-main">
+              <span class="result-item-name">{{ p.name }}</span>
+              @if (p.description) {
+                <span class="result-item-desc">{{ p.description }}</span>
+              }
+            </div>
+            <app-status-badge [status]="p.status" />
+          </a>
+        }
+      </div>
+    </div>
+  }
+
+  @if (r.tasks.length > 0) {
+    <div class="result-section">
+      <h2 class="result-section-title">Tasks ({{ r.tasks.length }})</h2>
+      <div class="result-list">
+        @for (t of r.tasks; track t._id) {
+          <a [routerLink]="['/tasks', t._id]" class="result-item card">
+            <div class="result-item-main">
+              <span class="result-item-name">{{ t.title }}</span>
+              @if (t.project?.name) {
+                <span class="result-item-desc">{{ t.project.name }}</span>
+              }
+            </div>
+            <app-status-badge [status]="t.status" />
+          </a>
+        }
+      </div>
+    </div>
+  }
+
+  @if (r.discussions.length > 0) {
+    <div class="result-section">
+      <h2 class="result-section-title">Discussions ({{ r.discussions.length }})</h2>
+      <div class="result-list">
+        @for (d of r.discussions; track d._id) {
+          <a [routerLink]="['/discussions', d._id]" class="result-item card">
+            <div class="result-item-main">
+              <span class="result-item-name">{{ d.title }}</span>
+              @if (d.project?.name) {
+                <span class="result-item-desc">{{ d.project.name }}</span>
+              }
+            </div>
+            <span class="result-item-date">{{ d.createdAt | date:'mediumDate' }}</span>
+          </a>
+        }
+      </div>
+    </div>
+  }
+
+  @if (r.releases.length > 0) {
+    <div class="result-section">
+      <h2 class="result-section-title">Releases ({{ r.releases.length }})</h2>
+      <div class="result-list">
+        @for (rel of r.releases; track rel._id) {
+          <a [routerLink]="['/releases', rel._id]" class="result-item card">
+            <div class="result-item-main">
+              <span class="result-item-name">{{ rel.version }}</span>
+              @if (rel.project?.name) {
+                <span class="result-item-desc">{{ rel.project.name }}</span>
+              }
+            </div>
+            <span class="result-item-date">{{ rel.releaseDate | date:'mediumDate' }}</span>
+          </a>
+        }
+      </div>
+    </div>
+  }
+
+  @if (totalResults === 0) {
+    <app-empty-state title="No results" message="Try a different search term." />
+  }
+}

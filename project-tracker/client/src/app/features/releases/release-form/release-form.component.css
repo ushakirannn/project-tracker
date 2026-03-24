@@ -1,0 +1,98 @@
+.form-card { max-width: 700px; }
+
+.changes-area { min-height: 150px; }
+
+/* Metric Snapshots */
+.metric-snapshots-section {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.section-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-xs);
+}
+
+.section-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-md);
+}
+
+.snapshot-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.snapshot-card {
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.snapshot-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.snapshot-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.snapshot-unit {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-light);
+}
+
+.snapshot-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-sm);
+  align-items: end;
+}
+
+.snapshot-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.snapshot-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.snapshot-change {
+  display: flex;
+  align-items: center;
+  min-width: 70px;
+  justify-content: center;
+  padding-bottom: 4px;
+}
+
+.change-badge {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.change-badge.positive { background: #dcfce7; color: #15803d; }
+.change-badge.negative { background: #fee2e2; color: #dc2626; }
+.change-badge.neutral { background: #f1f5f9; color: #64748b; }
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+}

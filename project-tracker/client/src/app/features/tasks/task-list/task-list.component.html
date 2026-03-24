@@ -1,0 +1,123 @@
+<div class="page-header">
+  <h1 class="page-title">Tasks</h1>
+  <div class="page-actions">
+    <a routerLink="/tasks/board" class="btn btn-secondary">Board View</a>
+    <a routerLink="/tasks/new" class="btn btn-primary">+ New Task</a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filters-bar">
+  <select class="form-select filter-select" [(ngModel)]="filters.status" (ngModelChange)="onFilterChange()">
+    <option [ngValue]="undefined" selected>All Statuses</option>
+    @for (s of statusOptions; track s) {
+      @if (s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    }
+  </select>
+
+  <select class="form-select filter-select" [(ngModel)]="filters.priority" (ngModelChange)="onFilterChange()">
+    <option [ngValue]="undefined" selected>All Priorities</option>
+    @for (p of priorityOptions; track p) {
+      @if (p) {
+        <option [value]="p">{{ p }}</option>
+      }
+    }
+  </select>
+
+  <select class="form-select filter-select" [(ngModel)]="filters.category" (ngModelChange)="onFilterChange()">
+    <option [ngValue]="undefined" selected>All Categories</option>
+    @for (c of categoryOptions; track c) {
+      @if (c) {
+        <option [value]="c">{{ c }}</option>
+      }
+    }
+  </select>
+
+  <select class="form-select filter-select" [(ngModel)]="filters.project" (ngModelChange)="onFilterChange()">
+    <option [ngValue]="undefined" selected>All Projects</option>
+    @for (p of projects(); track p._id) {
+      <option [value]="p._id">{{ p.name }}</option>
+    }
+  </select>
+
+  <select class="form-select filter-select" [(ngModel)]="filters.assignedTo" (ngModelChange)="onFilterChange()">
+    <option [ngValue]="undefined" selected>All Assignees</option>
+    @for (u of users(); track u._id) {
+      <option [value]="u._id">{{ u.name }}</option>
+    }
+  </select>
+
+  <input
+    class="form-input filter-input"
+    type="text"
+    [(ngModel)]="filters.tag"
+    (ngModelChange)="onFilterChange()"
+    placeholder="Filter by tag..."
+  />
+
+  @if (hasActiveFilters()) {
+    <button class="btn btn-ghost btn-sm" (click)="clearFilters()">Clear filters</button>
+  }
+</div>
+
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (tasks().length === 0) {
+  <app-empty-state
+    title="No tasks found"
+    message="Create your first task or adjust your filters."
+  />
+} @else {
+  <div class="task-table-wrapper">
+    <table class="task-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Project</th>
+          <th>Status</th>
+          <th>Priority</th>
+          <th>Category</th>
+          <th>Assigned To</th>
+          <th>Tags</th>
+          <th>Deadline</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (task of tasks(); track task._id) {
+          <tr class="task-row" [routerLink]="['/tasks', task._id]">
+            <td class="task-title-cell">{{ task.title }}</td>
+            <td class="task-project">{{ task.project?.name }}</td>
+            <td><app-status-badge [status]="task.status" /></td>
+            <td><app-status-badge [status]="task.priority" [label]="task.priority" /></td>
+            <td class="task-category">{{ task.category || '-' }}</td>
+            <td class="task-assignee">
+              @if (task.assignedTo?.name) {
+                {{ task.assignedTo.name }}
+              } @else {
+                <span class="unassigned">Unassigned</span>
+              }
+            </td>
+            <td class="task-tags">
+              @if (task.tags && task.tags.length > 0) {
+                @for (tag of task.tags; track tag) {
+                  <span class="tag-badge">{{ tag }}</span>
+                }
+              } @else {
+                -
+              }
+            </td>
+            <td class="task-deadline">
+              @if (task.deadline) {
+                {{ task.deadline | date:'mediumDate' }}
+              } @else {
+                -
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

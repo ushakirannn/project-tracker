@@ -1,0 +1,647 @@
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (project(); as p) {
+  <div class="page-header">
+    <div class="page-header-left">
+      <a routerLink="/projects" class="back-link">Projects</a>
+      <span class="separator">/</span>
+      <h1 class="page-title">{{ p.name }}</h1>
+      <app-status-badge [status]="p.status" />
+    </div>
+    <div class="page-header-actions">
+      <a [routerLink]="['/projects', p._id, 'edit']" class="btn btn-secondary">Edit</a>
+      <button class="btn btn-danger" (click)="confirmDelete()">Delete</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    @for (tab of tabs; track tab) {
+      <button
+        class="tab"
+        [class.active]="activeTab() === tab"
+        (click)="setTab(tab)"
+      >
+        {{ tab }}
+      </button>
+    }
+  </div>
+
+  <!-- Overview Tab -->
+  @if (activeTab() === 'overview') {
+    <div class="tab-content">
+      <!-- Current Focus -->
+      <div class="card focus-card">
+        <div class="card-header">
+          <h3 class="card-title">Current Focus</h3>
+          @if (!editingFocus()) {
+            <button class="btn btn-ghost btn-sm" (click)="startEditFocus()">Edit Focus</button>
+          }
+        </div>
+        @if (editingFocus()) {
+          <div class="focus-edit">
+            <textarea
+              class="form-textarea focus-textarea"
+              [(ngModel)]="focusText"
+              placeholder="What is the team currently working on? (1-2 sentences)"
+              rows="2"
+            ></textarea>
+            <div class="focus-edit-actions">
+              <button class="btn btn-secondary btn-sm" (click)="cancelEditFocus()">Cancel</button>
+              <button class="btn btn-primary btn-sm" (click)="saveFocus()">Save</button>
+            </div>
+          </div>
+        } @else {
+          @if (p.currentFocus) {
+            <p class="focus-display">{{ p.currentFocus }}</p>
+          } @else {
+            <p class="text-secondary text-sm">No focus set. Click "Edit Focus" to describe what the team is currently working on.</p>
+          }
+        }
+      </div>
+
+      @if (activeRoadmapItem(); as ri) {
+        <div class="card roadmap-initiative-card">
+          <div class="card-header">
+            <h3 class="card-title">Active Roadmap Initiative</h3>
+            <button class="btn btn-ghost btn-sm" (click)="setTab('roadmap')">View Roadmap</button>
+          </div>
+          <div class="initiative-content">
+            <span class="initiative-title">{{ ri.title }}</span>
+            @if (ri.description) {
+              <span class="initiative-desc">{{ ri.description }}</span>
+            }
+            <div class="initiative-meta">
+              <span class="roadmap-status" [class]="getRoadmapStatusClass(ri.status)">{{ getRoadmapStatusLabel(ri.status) }}</span>
+              @if (ri.taskCount) {
+                <span class="initiative-tasks">{{ ri.completedTaskCount }}/{{ ri.taskCount }} tasks done</span>
+              }
+              @if (ri.targetDate) {
+                <span class="initiative-target">Target: {{ ri.targetDate | date:'MMM d, y' }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="detail-grid">
+        <div class="card">
+          <h3 class="card-title">About</h3>
+          @if (p.description) {
+            <p class="description">{{ p.description }}</p>
+          } @else {
+            <p class="text-secondary text-sm">No description added yet.</p>
+          }
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Details</h3>
+          <div class="detail-list">
+            <div class="detail-row">
+              <span class="detail-label">Owner</span>
+              <span class="detail-value">{{ p.owner?.name || 'Unassigned' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Status</span>
+              <span class="detail-value"><app-status-badge [status]="p.status" /></span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Start Date</span>
+              <span class="detail-value">{{ p.startDate ? (p.startDate | date:'mediumDate') : 'Not set' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Created</span>
+              <span class="detail-value">{{ p.createdAt | date:'mediumDate' }}</span>
+            </div>
+            @if (latestRelease(); as rel) {
+              <div class="detail-row">
+                <span class="detail-label">Latest Release</span>
+                <a [routerLink]="['/releases', rel._id]" class="detail-value link">{{ rel.version }} <span class="text-secondary text-sm">({{ rel.releaseDate | date:'mediumDate' }})</span></a>
+              </div>
+            }
+            @if (p.repoLink) {
+              <div class="detail-row">
+                <span class="detail-label">Repository</span>
+                <a [href]="p.repoLink" target="_blank" class="detail-value link">{{ p.repoLink }}</a>
+              </div>
+            }
+            @if (p.prodUrl) {
+              <div class="detail-row">
+                <span class="detail-label">Production URL</span>
+                <a [href]="p.prodUrl" target="_blank" class="detail-value link">{{ p.prodUrl }}</a>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Tasks Tab -->
+  @if (activeTab() === 'tasks') {
+    <div class="tab-content">
+      <div class="tab-header">
+        <a [routerLink]="['/tasks/new']" [queryParams]="{ project: p._id }" class="btn btn-primary btn-sm">+ Add Task</a>
+      </div>
+
+      <div class="task-filters-bar">
+        <select class="form-select filter-select" [(ngModel)]="taskFilters.status" (ngModelChange)="onTaskFilterChange()">
+          <option [ngValue]="undefined">All Statuses</option>
+          @for (s of statusOptions; track s) {
+            @if (s) { <option [value]="s">{{ s }}</option> }
+          }
+        </select>
+
+        <select class="form-select filter-select" [(ngModel)]="taskFilters.priority" (ngModelChange)="onTaskFilterChange()">
+          <option [ngValue]="undefined">All Priorities</option>
+          @for (pr of priorityOptions; track pr) {
+            @if (pr) { <option [value]="pr">{{ pr }}</option> }
+          }
+        </select>
+
+        <select class="form-select filter-select" [(ngModel)]="taskFilters.category" (ngModelChange)="onTaskFilterChange()">
+          <option [ngValue]="undefined">All Categories</option>
+          @for (c of categoryOptions; track c) {
+            @if (c) { <option [value]="c">{{ c }}</option> }
+          }
+        </select>
+
+        <select class="form-select filter-select" [(ngModel)]="taskFilters.assignedTo" (ngModelChange)="onTaskFilterChange()">
+          <option [ngValue]="undefined">All Assignees</option>
+          @for (u of users(); track u._id) {
+            <option [value]="u._id">{{ u.name }}</option>
+          }
+        </select>
+
+        @if (hasActiveTaskFilters()) {
+          <button class="btn btn-ghost btn-sm" (click)="clearTaskFilters()">Clear filters</button>
+        }
+      </div>
+
+      @if (tasks().length === 0) {
+        <app-empty-state title="No tasks found" message="Create a task or adjust your filters." />
+      } @else {
+        <div class="task-list">
+          @for (task of tasks(); track task._id) {
+            <a [routerLink]="['/tasks', task._id]" class="task-item card">
+              <div class="task-item-left">
+                <span class="task-item-title">{{ task.title }}</span>
+                <span class="task-item-meta">{{ task.category || '' }} {{ task.assignedTo?.name ? '- ' + task.assignedTo.name : '' }}</span>
+              </div>
+              <div class="task-item-right">
+                <app-status-badge [status]="task.priority" [label]="task.priority" />
+                <app-status-badge [status]="task.status" />
+              </div>
+            </a>
+          }
+        </div>
+      }
+    </div>
+  }
+  <!-- Releases Tab -->
+  @if (activeTab() === 'releases') {
+    <div class="tab-content">
+      <div class="tab-header">
+        <a [routerLink]="['/releases/new']" [queryParams]="{ project: p._id }" class="btn btn-primary btn-sm">+ Add Release</a>
+      </div>
+      @if (releases().length === 0) {
+        <app-empty-state title="No releases yet" message="Create a release for this project." />
+      } @else {
+        <div class="task-list">
+          @for (rel of releases(); track rel._id) {
+            <a [routerLink]="['/releases', rel._id]" class="task-item card">
+              <div class="task-item-left">
+                <span class="task-item-title">{{ rel.version }}</span>
+                <span class="task-item-meta">{{ rel.releaseDate | date:'mediumDate' }}</span>
+              </div>
+              @if (rel.description) {
+                <span class="text-secondary text-sm">{{ rel.description }}</span>
+              }
+            </a>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Discussions Tab -->
+  @if (activeTab() === 'discussions') {
+    <div class="tab-content">
+      <div class="tab-header">
+        <a [routerLink]="['/discussions/new']" [queryParams]="{ project: p._id }" class="btn btn-primary btn-sm">+ New Discussion</a>
+      </div>
+      @if (discussions().length === 0) {
+        <app-empty-state title="No discussions yet" message="Start a discussion for this project." />
+      } @else {
+        <div class="task-list">
+          @for (d of discussions(); track d._id) {
+            <a [routerLink]="['/discussions', d._id]" class="task-item card">
+              <div class="task-item-left">
+                <span class="task-item-title">{{ d.title }}</span>
+                <span class="task-item-meta">{{ d.createdBy?.name || '' }} - {{ d.createdAt | date:'mediumDate' }}</span>
+              </div>
+              @if (d.linkedTask) {
+                <app-status-badge status="linked" label="Has Task" />
+              }
+            </a>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Metrics Tab -->
+  @if (activeTab() === 'metrics') {
+    <div class="tab-content">
+      <div class="tab-header">
+        <button class="btn btn-primary btn-sm" (click)="openAddMetric()">+ Add Metric</button>
+      </div>
+
+      @if (showAddMetric()) {
+        <div class="card add-metric-card">
+          <h4>Define New Metric</h4>
+          <div class="metric-form-row">
+            <input class="form-input" type="text" [(ngModel)]="newMetric.metricName" placeholder="Metric name (e.g. Signups)" />
+            <input class="form-input" type="text" [(ngModel)]="newMetric.metricUnit" placeholder="Unit (e.g. users/day)" />
+            <button class="btn btn-primary btn-sm" (click)="addMetric()">Add</button>
+            <button class="btn btn-secondary btn-sm" (click)="showAddMetric.set(false)">Cancel</button>
+          </div>
+        </div>
+      }
+
+      @if (metrics().length === 0) {
+        <app-empty-state title="No metrics defined" message="Add metrics to track key indicators for this project." />
+      } @else {
+        <div class="card">
+          <div class="metrics-table-wrapper">
+            <table class="metrics-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th>Unit</th>
+                  <th>Current Value</th>
+                  <th>Previous Value</th>
+                  <th>Change</th>
+                  <th>Source</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of metrics(); track m._id) {
+                  @if (editingMetricId() === m._id) {
+                    <tr>
+                      <td><input class="form-input form-input-sm" type="text" [(ngModel)]="editMetric.metricName" /></td>
+                      <td><input class="form-input form-input-sm" type="text" [(ngModel)]="editMetric.metricUnit" /></td>
+                      <td colspan="3"></td>
+                      <td></td>
+                      <td class="metric-actions">
+                        <button class="btn btn-ghost btn-sm" (click)="saveEditMetric()">Save</button>
+                        <button class="btn btn-ghost btn-sm" (click)="cancelEditMetric()">Cancel</button>
+                      </td>
+                    </tr>
+                  } @else {
+                    <tr>
+                      <td class="metric-name">{{ m.metricName }}</td>
+                      <td class="metric-unit">{{ m.metricUnit || '—' }}</td>
+                      @if (m.latestSnapshot) {
+                        <td class="metric-value">{{ m.latestSnapshot.currentValue }}</td>
+                        <td class="metric-value">{{ m.latestSnapshot.previousValue }}</td>
+                        <td>
+                          <span class="metric-change"
+                            [class.positive]="m.latestSnapshot.percentageChange > 0"
+                            [class.negative]="m.latestSnapshot.percentageChange < 0"
+                            [class.neutral]="m.latestSnapshot.percentageChange === 0">
+                            {{ m.latestSnapshot.percentageChange > 0 ? '+' : '' }}{{ m.latestSnapshot.percentageChange }}%
+                          </span>
+                        </td>
+                        <td class="metric-source">
+                          @if (m.latestRelease) {
+                            <span class="metric-release">{{ m.latestRelease }}</span>
+                          } @else {
+                            <span class="metric-manual">{{ m.latestSource || 'Manual' }}</span>
+                          }
+                        </td>
+                      } @else {
+                        <td class="text-secondary">—</td>
+                        <td class="text-secondary">—</td>
+                        <td class="text-secondary">—</td>
+                        <td class="text-secondary">—</td>
+                      }
+                      <td class="metric-actions">
+                        <button class="btn btn-ghost btn-sm" (click)="startRecordValue(m)">Record</button>
+                        <button class="btn btn-ghost btn-sm" (click)="toggleMetricHistory(m._id)">History</button>
+                        <button class="btn btn-ghost btn-sm" (click)="startEditMetric(m)">Edit</button>
+                        <button class="btn btn-ghost btn-sm text-danger" (click)="deleteMetric(m._id)">Delete</button>
+                      </td>
+                    </tr>
+                    <!-- Record Value Inline Form -->
+                    @if (recordingMetricId() === m._id) {
+                      <tr class="record-row">
+                        <td colspan="7">
+                          <div class="record-form">
+                            <div class="record-fields">
+                              <div class="record-field">
+                                <label class="form-label">Previous Value</label>
+                                <input class="form-input form-input-sm" type="number" [(ngModel)]="recordValue.previousValue" />
+                              </div>
+                              <div class="record-field">
+                                <label class="form-label">Current Value</label>
+                                <input class="form-input form-input-sm" type="number" [(ngModel)]="recordValue.currentValue" />
+                              </div>
+                              <div class="record-field">
+                                <label class="form-label">Note (optional)</label>
+                                <input class="form-input form-input-sm" type="text" [(ngModel)]="recordValue.note" placeholder="e.g. Weekly check" />
+                              </div>
+                              <div class="record-field record-change">
+                                @if (getRecordChangePercent() !== null) {
+                                  <span class="metric-change"
+                                    [class.positive]="getRecordChangePercent()! > 0"
+                                    [class.negative]="getRecordChangePercent()! < 0"
+                                    [class.neutral]="getRecordChangePercent() === 0">
+                                    {{ getRecordChangePercent()! > 0 ? '+' : '' }}{{ getRecordChangePercent() }}%
+                                  </span>
+                                }
+                              </div>
+                            </div>
+                            <div class="record-actions">
+                              <button class="btn btn-secondary btn-sm" (click)="cancelRecordValue()">Cancel</button>
+                              <button class="btn btn-primary btn-sm" (click)="saveRecordValue()">Save Value</button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                    <!-- Snapshot History -->
+                    @if (expandedMetricId() === m._id) {
+                      <tr class="history-row">
+                        <td colspan="7">
+                          <div class="history-section">
+                            <h4 class="history-title">History — {{ m.metricName }}</h4>
+                            @if (metricHistory().length === 0) {
+                              <p class="text-secondary text-sm">No snapshots recorded yet.</p>
+                            } @else {
+                              <table class="history-table">
+                                <thead>
+                                  <tr>
+                                    <th>Date</th>
+                                    <th>Previous</th>
+                                    <th>Current</th>
+                                    <th>Change</th>
+                                    <th>Source</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  @for (h of metricHistory(); track h._id) {
+                                    <tr>
+                                      <td>{{ h.createdAt | date:'mediumDate' }}</td>
+                                      <td class="metric-value">{{ h.previousValue }}</td>
+                                      <td class="metric-value">{{ h.currentValue }}</td>
+                                      <td>
+                                        <span class="metric-change"
+                                          [class.positive]="h.percentageChange > 0"
+                                          [class.negative]="h.percentageChange < 0"
+                                          [class.neutral]="h.percentageChange === 0">
+                                          {{ h.percentageChange > 0 ? '+' : '' }}{{ h.percentageChange }}%
+                                        </span>
+                                      </td>
+                                      <td class="metric-source">
+                                        @if (h.release?.version) {
+                                          <span class="metric-release">{{ h.release.version }}</span>
+                                        } @else {
+                                          <span class="metric-manual">{{ h.note || 'Manual' }}</span>
+                                        }
+                                      </td>
+                                    </tr>
+                                  }
+                                </tbody>
+                              </table>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Roadmap Tab -->
+  @if (activeTab() === 'roadmap') {
+    <div class="tab-content">
+      <div class="tab-header">
+        <button class="btn btn-primary btn-sm" (click)="openAddRoadmap()">+ Add Roadmap Item</button>
+      </div>
+
+      @if (showAddRoadmap()) {
+        <div class="card roadmap-form-card">
+          <h4>New Roadmap Item</h4>
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input class="form-input" type="text" [(ngModel)]="newRoadmap.title" placeholder="e.g. Lead Magnet Improvements" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" [(ngModel)]="newRoadmap.description" placeholder="Describe the initiative..." rows="2"></textarea>
+          </div>
+          <div class="roadmap-form-row">
+            <div class="form-group">
+              <label class="form-label">Priority</label>
+              <select class="form-select" [(ngModel)]="newRoadmap.priority">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Start Date</label>
+              <input class="form-input" type="date" [(ngModel)]="newRoadmap.startDate" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Target Date</label>
+              <input class="form-input" type="date" [(ngModel)]="newRoadmap.targetDate" />
+            </div>
+          </div>
+          <div class="roadmap-form-actions">
+            <button class="btn btn-secondary btn-sm" (click)="showAddRoadmap.set(false)">Cancel</button>
+            <button class="btn btn-primary btn-sm" (click)="addRoadmap()">Create</button>
+          </div>
+        </div>
+      }
+
+      @if (roadmapItems().length === 0) {
+        <app-empty-state title="No roadmap items" message="Add strategic initiatives to plan the project direction." />
+      } @else {
+        <div class="roadmap-list">
+          @for (item of roadmapItems(); track item._id) {
+            @if (editingRoadmapId() === item._id) {
+              <div class="card roadmap-form-card">
+                <h4>Edit Roadmap Item</h4>
+                <div class="form-group">
+                  <label class="form-label">Title</label>
+                  <input class="form-input" type="text" [(ngModel)]="editRoadmap.title" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Description</label>
+                  <textarea class="form-textarea" [(ngModel)]="editRoadmap.description" rows="2"></textarea>
+                </div>
+                <div class="roadmap-form-row">
+                  <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <select class="form-select" [(ngModel)]="editRoadmap.priority">
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="critical">Critical</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Start Date</label>
+                    <input class="form-input" type="date" [(ngModel)]="editRoadmap.startDate" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Target Date</label>
+                    <input class="form-input" type="date" [(ngModel)]="editRoadmap.targetDate" />
+                  </div>
+                </div>
+                <div class="roadmap-form-actions">
+                  <button class="btn btn-secondary btn-sm" (click)="cancelEditRoadmap()">Cancel</button>
+                  <button class="btn btn-primary btn-sm" (click)="saveEditRoadmap()">Save</button>
+                </div>
+              </div>
+            } @else {
+              <div class="card roadmap-card">
+                <div class="roadmap-card-header">
+                  <div class="roadmap-card-left">
+                    <h3 class="roadmap-title">{{ item.title }}</h3>
+                    <span class="roadmap-status" [class]="getRoadmapStatusClass(item.status)">
+                      {{ getRoadmapStatusLabel(item.status) }}
+                    </span>
+                    <span class="roadmap-priority" [class]="getRoadmapPriorityClass(item.priority)">
+                      {{ item.priority }}
+                    </span>
+                    @if (item.isStatusOverridden) {
+                      <span class="override-badge">Override</span>
+                    }
+                  </div>
+                  <div class="roadmap-card-actions">
+                    @if (item.isStatusOverridden) {
+                      <button class="btn btn-ghost btn-sm" (click)="clearRoadmapOverride(item)">Clear Override</button>
+                    } @else {
+                      <select class="form-select roadmap-status-select" (change)="overrideRoadmapStatus(item, $any($event.target).value)">
+                        <option value="" selected disabled>Override Status</option>
+                        <option value="planned">Planned</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="delayed">Delayed</option>
+                      </select>
+                    }
+                    <button class="btn btn-ghost btn-sm" (click)="startEditRoadmap(item)">Edit</button>
+                    <button class="btn btn-ghost btn-sm text-danger" (click)="deleteRoadmap(item._id)">Delete</button>
+                  </div>
+                </div>
+                @if (item.description) {
+                  <p class="roadmap-description">{{ item.description }}</p>
+                }
+                <div class="roadmap-meta">
+                  @if (item.startDate || item.targetDate) {
+                    <span class="roadmap-dates">
+                      {{ item.startDate ? (item.startDate | date:'MMM d') : '?' }}
+                      –
+                      {{ item.targetDate ? (item.targetDate | date:'MMM d, y') : '?' }}
+                    </span>
+                  }
+                  <span class="roadmap-tasks">
+                    {{ item.taskCount || 0 }} tasks
+                    @if (item.taskCount) {
+                      ({{ item.completedTaskCount || 0 }} done)
+                    }
+                  </span>
+                  @if (item.relatedSprints?.length) {
+                    <span class="roadmap-sprints">
+                      @for (s of item.relatedSprints; track s._id) {
+                        <span class="sprint-chip">{{ s.name }}</span>
+                      }
+                    </span>
+                  }
+                </div>
+                @if (item.taskCount) {
+                  <div class="roadmap-progress">
+                    <div class="progress-bar">
+                      <div class="progress-fill" [style.width.%]="item.taskCount ? (item.completedTaskCount! / item.taskCount * 100) : 0"></div>
+                    </div>
+                  </div>
+                }
+                <div class="roadmap-tasks-section">
+                  <button class="btn btn-ghost btn-sm roadmap-toggle-btn" (click)="toggleRoadmapTasks(item._id)">
+                    {{ expandedRoadmapId() === item._id ? 'Hide Tasks' : 'Show Tasks' }}
+                    ({{ item.taskCount || 0 }})
+                  </button>
+                  <a [routerLink]="['/tasks/new']" [queryParams]="{ project: p._id, roadmapItem: item._id }" class="btn btn-ghost btn-sm">+ Link New Task</a>
+                </div>
+                @if (expandedRoadmapId() === item._id) {
+                  <div class="roadmap-linked-tasks">
+                    @if (item.linkedTasks?.length) {
+                      @for (t of item.linkedTasks; track t._id) {
+                        <a [routerLink]="['/tasks', t._id]" class="roadmap-task-item">
+                          <span class="roadmap-task-title">{{ t.title }}</span>
+                          <div class="roadmap-task-meta">
+                            <app-status-badge [status]="t.status" />
+                            @if (t.assignedTo?.name) {
+                              <span class="roadmap-task-assignee">{{ t.assignedTo.name }}</span>
+                            }
+                          </div>
+                        </a>
+                      }
+                    } @else {
+                      <p class="text-secondary text-sm">No tasks linked yet. Create a task and assign it to this initiative.</p>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Activity Tab -->
+  @if (activeTab() === 'activity') {
+    <div class="tab-content">
+      @if (activities().length === 0) {
+        <app-empty-state title="No activity yet" message="Activity will appear here as changes are made." />
+      } @else {
+        <div class="activity-list">
+          @for (a of activities(); track a._id) {
+            <div class="activity-item">
+              <span class="activity-user">{{ a.user?.name || 'System' }}</span>
+              <span class="activity-action">{{ a.action }}</span>
+              <span class="activity-entity">{{ a.entityName }}</span>
+              <span class="activity-time">{{ a.timestamp | date:'medium' }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Delete Confirmation Modal -->
+  @if (showDeleteConfirm()) {
+    <div class="modal-overlay" (click)="cancelDelete()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Delete Project</h3>
+        <p>Are you sure you want to delete <strong>{{ p.name }}</strong>? This cannot be undone.</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="cancelDelete()">Cancel</button>
+          <button class="btn btn-danger" (click)="deleteProject()">Delete</button>
+        </div>
+      </div>
+    </div>
+  }
+}
